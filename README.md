@@ -52,11 +52,11 @@ recoverable revenue pool.
 
 **What cleaning accomplished** — raw (dashed, with duplicates & fee lines) vs cleaned monthly net revenue:
 
-![](outputs/4_raw_vs_clean.png)
+![](4_raw_vs_clean.png)
 
 **RFM: a small champion core drives revenue** — bars = revenue, line = share of customers:
 
-![](outputs/5_rfm_segments.png)
+![](5_rfm_segments.png)
 
 ## Repo layout
 
