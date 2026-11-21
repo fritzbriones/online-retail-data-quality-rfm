@@ -1,0 +1,11 @@
+{
+  "identified_customers": 4334,
+  "snapshot_date": "2011-12-10",
+  "champions": {
+    "customers": 956,
+    "revenue_musd": 5.71,
+    "revenue_share_pct": 65.3
+  },
+  "top_segment_by_revenue": "Champions",
+  "at_risk_revenue_musd": 0.78
+}

@@ -1,0 +1,7 @@
+segment,customers,revenue,recency_median,frequency_median,revenue_share_%,customer_share_%
+Champions,956,5708566.8,10.0,7.0,65.3,22.1
+Loyal customers,768,1357795.7,37.0,3.0,15.5,17.7
+At risk (was loyal),637,783275.8,135.0,3.0,9.0,14.7
+Promising / new,964,446203.7,64.0,1.0,5.1,22.2
+Hibernating,669,313921.5,274.0,1.0,3.6,15.4
+Potential loyalists,340,127464.1,14.0,2.0,1.5,7.8

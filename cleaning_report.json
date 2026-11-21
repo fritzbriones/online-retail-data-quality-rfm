@@ -1,0 +1,65 @@
+{
+  "cleaning_log": {
+    "raw": {
+      "rows_kept": 541909
+    },
+    "1_dedupe_exact": {
+      "rows_kept": 536641,
+      "exact_duplicates_removed": 5268
+    },
+    "2_flag_cancellations": {
+      "rows_kept": 536641,
+      "cancellation_rows_flagged": 9251
+    },
+    "3_neg_qty_no_invoice": {
+      "rows_kept": 536641,
+      "negative_qty_without_C_invoice": 1336
+    },
+    "4_drop_nonpositive_price": {
+      "rows_kept": 534129,
+      "removed": 2512,
+      "why": "adjustment lines (e.g., POST, M, BANK CHARGES) carry 0 price; not real sales",
+      "stockcodes_removed": {
+        "23084": 16,
+        "35965": 13,
+        "20713": 11,
+        "22501": 10,
+        "22084": 9
+      }
+    },
+    "5_drop_nonproduct_and_outlier_price": {
+      "rows_kept": 531172,
+      "non_product_codes_removed": 2957,
+      "price_outliers_removed_above_1000": 0,
+      "examples_non_product": {
+        "POST": 1252,
+        "DOT": 707,
+        "M": 560,
+        "C2": 143,
+        "D": 77
+      }
+    },
+    "6_fill_missing_description": {
+      "rows_kept": 531172,
+      "filled_unknown": 0
+    },
+    "7_keep_missing_customer_id": {
+      "rows_kept": 531172,
+      "missing_customer_id": 131516,
+      "why": "25% of sales have no customer ID; dropping them would erase a quarter of revenue. Keep as NA; customer-level analyses will use the non-null subset, revenue analyses use all rows."
+    }
+  },
+  "raw_rows": 541909,
+  "clean_rows": 531172,
+  "net_revenue_all_lines": 9770919.71,
+  "gross_revenue_sales_only": 10246820.87,
+  "cancellation_impact": -475901.16,
+  "order_count": 23195,
+  "product_count": 3914,
+  "customer_count_known": 4362,
+  "countries": 38,
+  "date_range": [
+    "2010-12-01 08:26:00",
+    "2011-12-09 12:50:00"
+  ]
+}
