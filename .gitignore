@@ -1,4 +1,5 @@
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
-data/          # source xlsx (23MB) and cleaned CSV are regenerable; see README
+# Source data (23 MB xlsx / 45 MB csv) and the regenerated clean CSV - see README
+data/

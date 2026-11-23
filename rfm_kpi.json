@@ -1,11 +1,24 @@
 {
-  "identified_customers": 4334,
+  "currency": "GBP",
   "snapshot_date": "2011-12-10",
+  "scored_customers": 4324,
+  "excluded_net_spend_le_0": 10,
+  "gross_vs_net_spend_gbp": [
+    8657031.81,
+    8269637.32
+  ],
   "champions": {
-    "customers": 956,
-    "revenue_musd": 5.71,
-    "revenue_share_pct": 65.3
+    "customers": 941,
+    "customer_share_pct": 21.8,
+    "revenue_share_pct": 66.8,
+    "net_revenue_gbp": 5525680.22
   },
-  "top_segment_by_revenue": "Champions",
-  "at_risk_revenue_musd": 0.78
+  "at_risk": {
+    "customers": 657,
+    "net_revenue_last_13m_gbp": 773616.39,
+    "median_days_since_last_order": 131.0,
+    "median_spend_gbp": 709.71,
+    "win_back_1_in_10_customers": 66,
+    "win_back_1_in_10_value_gbp": 46841.0
+  }
 }

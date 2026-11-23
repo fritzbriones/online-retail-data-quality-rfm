@@ -1,7 +1,9 @@
 {
+  "currency": "GBP",
   "cleaning_log": {
-    "raw": {
-      "rows_kept": 541909
+    "0_raw": {
+      "rows_kept": 541909,
+      "missing_description": 1454
     },
     "1_dedupe_exact": {
       "rows_kept": 536641,
@@ -9,57 +11,70 @@
     },
     "2_flag_cancellations": {
       "rows_kept": 536641,
-      "cancellation_rows_flagged": 9251
+      "cancellation_lines_flagged": 9251
     },
-    "3_neg_qty_no_invoice": {
+    "3_find_stock_adjustments": {
       "rows_kept": 536641,
-      "negative_qty_without_C_invoice": 1336
+      "negative_qty_without_C_invoice": 1336,
+      "of_which_unit_price_zero": 1336,
+      "note": "all carry a zero price, so step 4 removes them"
     },
     "4_drop_nonpositive_price": {
       "rows_kept": 534129,
       "removed": 2512,
-      "why": "adjustment lines (e.g., POST, M, BANK CHARGES) carry 0 price; not real sales",
-      "stockcodes_removed": {
+      "of_which_no_customer_id": 2472,
+      "of_which_stock_writeoffs": 1336,
+      "why": "unpriced lines are stock adjustments/write-offs and free samples with no revenue; mostly without a customer. Not sales.",
+      "top_stockcodes": {
         "23084": 16,
         "35965": 13,
         "20713": 11,
         "22501": 10,
-        "22084": 9
+        "22676": 9
       }
     },
-    "5_drop_nonproduct_and_outlier_price": {
+    "5_drop_nonproduct_codes": {
       "rows_kept": 531172,
-      "non_product_codes_removed": 2957,
-      "price_outliers_removed_above_1000": 0,
-      "examples_non_product": {
+      "removed": 2957,
+      "net_value_removed_gbp": -22788.64,
+      "codes": {
         "POST": 1252,
         "DOT": 707,
         "M": 560,
         "C2": 143,
-        "D": 77
-      }
+        "D": 77,
+        "S": 62
+      },
+      "max_unit_price_remaining": 649.5
     },
-    "6_fill_missing_description": {
+    "6_missing_description": {
       "rows_kept": 531172,
-      "filled_unknown": 0
+      "filled_unknown": 0,
+      "missing_in_raw": 1454
     },
     "7_keep_missing_customer_id": {
       "rows_kept": 531172,
-      "missing_customer_id": 131516,
-      "why": "25% of sales have no customer ID; dropping them would erase a quarter of revenue. Keep as NA; customer-level analyses will use the non-null subset, revenue analyses use all rows."
+      "rows_missing_customer_id": 131516,
+      "share_of_rows_pct": 24.8,
+      "share_of_gross_sales_pct": 14.7,
+      "why": "Dropping them would delete ~15% of sales. Revenue analyses use all rows; customer analyses (RFM) use identified customers only."
     }
   },
   "raw_rows": 541909,
   "clean_rows": 531172,
-  "net_revenue_all_lines": 9770919.71,
-  "gross_revenue_sales_only": 10246820.87,
-  "cancellation_impact": -475901.16,
-  "order_count": 23195,
-  "product_count": 3914,
-  "customer_count_known": 4362,
+  "gross_sales_gbp": 10246820.87,
+  "cancellations_gbp": -475901.16,
+  "net_revenue_gbp": 9770919.71,
+  "cancellation_rate_pct": 4.64,
+  "sales_invoices": 19773,
+  "cancellation_invoices": 3422,
+  "avg_order_value_gbp": 518.22,
+  "products": 3914,
+  "identified_customers": 4362,
   "countries": 38,
   "date_range": [
     "2010-12-01 08:26:00",
     "2011-12-09 12:50:00"
-  ]
+  ],
+  "note_partial_last_month": "2011-12 only covers up to 09 Dec; excluded from monthly trend charts"
 }

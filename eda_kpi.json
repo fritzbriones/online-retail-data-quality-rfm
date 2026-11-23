@@ -1,8 +1,14 @@
 {
-  "kpi": {
-    "net_revenue_musd": 9.77,
-    "uk_share_pct": 85.1,
-    "orders": 23195,
-    "revenue_per_order": 421.3
-  }
+  "currency": "GBP",
+  "net_revenue_gbp_m": 9.77,
+  "uk_share_of_net_revenue_pct": 84.8,
+  "sep_nov_share_of_full_months_pct": 37.5,
+  "peak_month": "2011-11",
+  "peak_vs_feb_apr_avg": 2.58,
+  "avg_cancellation_rate_pct": 3.13,
+  "top_product_net": "REGENCY CAKESTAND 3 TIER",
+  "gross_top10_but_cancelled": [
+    "MEDIUM CERAMIC TOP STORAGE JAR",
+    "PAPER CRAFT , LITTLE BIRDIE"
+  ]
 }
