@@ -1,7 +1,11 @@
-"""RFM customer segmentation on the CLEANED Online Retail data.
+"""RFM customer segmentation on the CLEANED Online Retail data (run clean.py first).
 
-Recency, Frequency, Monetary scoring + segment naming (qualitative quadrants).
-Run src/clean.py first. Outputs: CSV table, segmentation chart, segment KPIs.
+- Monetary = NET spend (sales minus that customer's cancellations), in GBP.
+  Using gross spend would credit customers for orders they cancelled.
+- Frequency = number of distinct (non-cancelled) invoices.
+- Recency  = days from last purchase to the snapshot (day after the last invoice).
+- Customers whose net spend is <= 0 (everything cancelled/returned) are excluded
+  from scoring and reported separately.
 """
 from pathlib import Path
 import json
@@ -9,77 +13,107 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 
-ROOT = Path(__file__).resolve().parents[1]
-DATA, OUT = ROOT / "data", ROOT / "outputs"
+ROOT = Path(__file__).resolve().parent
+DATA = ROOT / "data"
+DARK, ACCENT, GREY = "#264653", "#e76f51", "#8d99ae"
+plt.rcParams.update({"figure.dpi": 150, "axes.spines.top": False, "axes.spines.right": False,
+                     "axes.titlelocation": "left", "axes.titleweight": "bold", "font.size": 10})
 
 df = pd.read_csv(DATA / "retail_clean.csv", parse_dates=["InvoiceDate"],
                  dtype={"CustomerID": "Int64", "InvoiceNo": str})
-sales = df[~df.is_cancellation & ~df.is_adjustment & df.CustomerID.notna()].copy()
+known = df[df.CustomerID.notna()]
+sales = known[~known.is_cancellation]
+SNAPSHOT = df.InvoiceDate.max().normalize() + pd.Timedelta(days=1)
 
-SNAPSHOT = sales.InvoiceDate.max() + pd.Timedelta(days=1)   # day after last order
-
-# ---------- RFM per customer ----------
 rfm = sales.groupby("CustomerID").agg(
     last_purchase=("InvoiceDate", "max"),
+    first_purchase=("InvoiceDate", "min"),
     frequency=("InvoiceNo", "nunique"),
-    monetary=("Revenue", "sum"),
-    tenure=("InvoiceDate", "min"),
-)
+    gross_spend=("Revenue", "sum"))
+rfm["monetary"] = known.groupby("CustomerID").Revenue.sum().reindex(rfm.index)   # net
 rfm["recency_days"] = (SNAPSHOT - rfm.last_purchase).dt.days
 
-# ---------- Scores: 1-5, 5 = best ----------
-rfm["R"] = pd.qcut(rfm.recency_days, 5, labels=[5, 4, 3, 2, 1]).astype(int)
+excluded = rfm[rfm.monetary <= 0]
+rfm = rfm[rfm.monetary > 0].copy()
+
+# Scores 1-5, 5 = best. rank() breaks ties so every quintile has ~20% of customers.
+rfm["R"] = pd.qcut(rfm.recency_days.rank(method="first"), 5, labels=[5, 4, 3, 2, 1]).astype(int)
 rfm["F"] = pd.qcut(rfm.frequency.rank(method="first"), 5, labels=[1, 2, 3, 4, 5]).astype(int)
-rfm["M"] = pd.qcut(rfm.monetary, 5, labels=[1, 2, 3, 4, 5]).astype(int)
+rfm["M"] = pd.qcut(rfm.monetary.rank(method="first"), 5, labels=[1, 2, 3, 4, 5]).astype(int)
 
-# ---------- Qualitative segments (standard RFM map) ----------
-def segment(row):
-    r, f, m = row.R, row.F, row.M
-    if r >= 4 and f >= 4 and m >= 4: return "Champions"
-    if r >= 3 and f >= 3 and m >= 3: return "Loyal customers"
-    if 2 <= r <= 4 and f <= 2: return "Promising / new"
-    if r <= 2 and f >= 3: return "At risk (was loyal)"
-    if r <= 2 and f <= 2: return "Hibernating"
-    return "Potential loyalists"
-rfm["segment"] = rfm.apply(segment, axis=1)
 
-# ---------- Pivot to segment KPIs ----------
+def segment(r, f, m):
+    """Exhaustive, non-overlapping rules on R and F (M breaks out Champions)."""
+    if r >= 4 and f >= 4 and m >= 4:
+        return "Champions"
+    if r >= 3 and f >= 3:
+        return "Loyal"
+    if r <= 2 and f >= 3:
+        return "At risk (lapsed regulars)"
+    if r >= 4:
+        return "New / recent one-offs"
+    if r == 3:
+        return "Needs attention"
+    return "Hibernating"
+
+
+rfm["segment"] = [segment(*x) for x in rfm[["R", "F", "M"]].itertuples(index=False)]
+
+ORDER = ["Champions", "Loyal", "At risk (lapsed regulars)", "New / recent one-offs",
+         "Needs attention", "Hibernating"]
 seg = rfm.groupby("segment").agg(
     customers=("R", "size"),
-    revenue=("monetary", "sum"),
-    recency_median=("recency_days", "median"),
-    frequency_median=("frequency", "median"),
-).sort_values("revenue", ascending=False)
-seg["revenue_share_%"] = (seg.revenue / seg.revenue.sum() * 100).round(1)
-seg["customer_share_%"] = (seg.customers / seg.customers.sum() * 100).round(1)
-seg.round(1).to_csv(OUT / "rfm_segments.csv")
-rfm.reset_index().to_csv(OUT / "rfm_customers.csv", index=False)
+    net_revenue_gbp=("monetary", "sum"),
+    median_recency_days=("recency_days", "median"),
+    median_orders=("frequency", "median"),
+    median_spend_gbp=("monetary", "median")).reindex(ORDER)
+seg["revenue_share_pct"] = seg.net_revenue_gbp / seg.net_revenue_gbp.sum() * 100
+seg["customer_share_pct"] = seg.customers / seg.customers.sum() * 100
+seg.round(1).to_csv(ROOT / "rfm_segments.csv")
+rfm.reset_index().round({"monetary": 2, "gross_spend": 2}).to_csv(ROOT / "rfm_customers.csv", index=False)
 
-# ---------- Chart: revenue vs customer share by segment ----------
-fig, ax = plt.subplots(figsize=(10, 4.5))
-x = seg.index
-ax.bar(x, seg.revenue / 1e6, color="#264653", label="Revenue ($M)")
-ax2 = ax.twinx()
-ax2.plot(x, seg["customer_share_%"], "o-", color="#e76f51", label="Customers (%)")
-ax.set_title("A small champion core drives a large revenue share")
-ax.set_ylabel("Revenue ($M)"); ax2.set_ylabel("Share of customers (%)")
-ax.tick_params(axis="x", rotation=20)
-l1, lb1 = ax.get_legend_handles_labels(); l2, lb2 = ax2.get_legend_handles_labels()
-ax.legend(l1 + l2, lb1 + lb2)
-fig.tight_layout(); fig.savefig(OUT / "5_rfm_segments.png"); fig.savefig(OUT / "5_rfm_segments.svg"); plt.close(fig)
+# ---------- Chart: customer share vs revenue share, same % axis ----------
+plot = seg.iloc[::-1]
+y = range(len(plot))
+fig, ax = plt.subplots(figsize=(9.5, 4.8))
+ax.barh([i + 0.2 for i in y], plot.customer_share_pct, height=0.4, color=GREY, label="% of customers")
+ax.barh([i - 0.2 for i in y], plot.revenue_share_pct, height=0.4, color=DARK, label="% of net revenue")
+for i, (c, r) in enumerate(zip(plot.customer_share_pct, plot.revenue_share_pct)):
+    ax.text(c + 0.6, i + 0.2, f"{c:.0f}%", va="center", fontsize=8, color=GREY)
+    ax.text(r + 0.6, i - 0.2, f"{r:.0f}%", va="center", fontsize=8, color=DARK)
+ax.set_yticks(list(y), plot.index)
+ax.xaxis.set_major_formatter(mtick.PercentFormatter())
+ax.legend(frameon=False, loc="lower right")
+ch = seg.loc["Champions"]
+ax.set_title(f"{ch.customer_share_pct:.0f}% of customers (Champions) bring "
+             f"{ch.revenue_share_pct:.0f}% of net revenue")
+fig.tight_layout()
+fig.savefig(ROOT / "5_rfm_segments.png")
+plt.close(fig)
 
-# ---------- Summary ----------
-champ = seg.loc["Champions"] if "Champions" in seg.index else None
+# ---------- Business sizing: what is the at-risk pool worth? ----------
+ar = seg.loc["At risk (lapsed regulars)"]
+# Conservative sizing: a won-back customer is assumed to repeat their median
+# historical spend (13 months of data), nothing more.
+n10 = round(ar.customers * 0.10)
+win_back_10 = n10 * float(ar.median_spend_gbp)
 kpi = {
-    "identified_customers": int(len(rfm)),
+    "currency": "GBP",
     "snapshot_date": str(SNAPSHOT.date()),
-    "champions": {"customers": int(champ.customers), "revenue_musd": round(champ.revenue / 1e6, 2),
-                  "revenue_share_pct": float(champ["revenue_share_%"])} if champ is not None else None,
-    "top_segment_by_revenue": seg.index[0],
-    "at_risk_revenue_musd": round(seg.loc["At risk (was loyal)", "revenue"] / 1e6, 2)
-        if "At risk (was loyal)" in seg.index else None,
+    "scored_customers": int(len(rfm)),
+    "excluded_net_spend_le_0": int(len(excluded)),
+    "gross_vs_net_spend_gbp": [round(float(rfm.gross_spend.sum()), 2), round(float(rfm.monetary.sum()), 2)],
+    "champions": {"customers": int(ch.customers), "customer_share_pct": round(float(ch.customer_share_pct), 1),
+                  "revenue_share_pct": round(float(ch.revenue_share_pct), 1),
+                  "net_revenue_gbp": round(float(ch.net_revenue_gbp), 2)},
+    "at_risk": {"customers": int(ar.customers), "net_revenue_last_13m_gbp": round(float(ar.net_revenue_gbp), 2),
+                "median_days_since_last_order": float(ar.median_recency_days),
+                "median_spend_gbp": round(float(ar.median_spend_gbp), 2),
+                "win_back_1_in_10_customers": int(n10),
+                "win_back_1_in_10_value_gbp": round(win_back_10, 0)},
 }
-(OUT / "rfm_kpi.json").write_text(json.dumps(kpi, indent=2))
+(ROOT / "rfm_kpi.json").write_text(json.dumps(kpi, indent=2))
 print(seg.round(1).to_string())
 print(json.dumps(kpi, indent=2))

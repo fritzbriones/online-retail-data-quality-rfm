@@ -1,7 +1,7 @@
-segment,customers,revenue,recency_median,frequency_median,revenue_share_%,customer_share_%
-Champions,956,5708566.8,10.0,7.0,65.3,22.1
-Loyal customers,768,1357795.7,37.0,3.0,15.5,17.7
-At risk (was loyal),637,783275.8,135.0,3.0,9.0,14.7
-Promising / new,964,446203.7,64.0,1.0,5.1,22.2
-Hibernating,669,313921.5,274.0,1.0,3.6,15.4
-Potential loyalists,340,127464.1,14.0,2.0,1.5,7.8
+segment,customers,net_revenue_gbp,median_recency_days,median_orders,median_spend_gbp,revenue_share_pct,customer_share_pct
+Champions,941,5525680.2,10.0,7.0,2588.1,66.8,21.8
+Loyal,996,1251496.1,33.0,3.0,750.4,15.1,23.0
+At risk (lapsed regulars),657,773616.4,131.0,3.0,709.7,9.4,15.2
+New / recent one-offs,311,132080.2,18.0,1.0,307.1,1.6,7.2
+Needs attention,346,157565.8,52.0,1.0,316.3,1.9,8.0
+Hibernating,1073,429198.6,218.0,1.0,272.4,5.2,24.8

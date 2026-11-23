@@ -1,11 +1,39 @@
-Country,value
-United Kingdom,8.72404522
-Netherlands,0.28388934000000005
-EIRE,0.27085085999999997
-Germany,0.20538114999999998
-France,0.184493
-Australia,0.13810381
-Spain,0.055706559999999995
-Switzerland,0.0530656
-Japan,0.037416370000000004
-Belgium,0.036927339999999996
+Country,net_revenue_gbp,share_pct
+United Kingdom,8280991.91,84.75
+Netherlands,283479.54,2.9
+EIRE,259380.02,2.65
+Germany,200619.66,2.05
+France,182076.6,1.86
+Australia,136922.5,1.4
+Switzerland,52483.05,0.54
+Spain,51746.65,0.53
+Belgium,36662.96,0.38
+Japan,35419.79,0.36
+Sweden,35166.41,0.36
+Norway,32292.96,0.33
+Portugal,26807.47,0.27
+Channel Islands,19926.39,0.2
+Finland,18303.54,0.19
+Denmark,18042.14,0.18
+Italy,15276.34,0.16
+Cyprus,12843.76,0.13
+Hong Kong,9733.24,0.1
+Singapore,9120.39,0.09
+Austria,8698.32,0.09
+Israel,7901.97,0.08
+Poland,6853.14,0.07
+Unspecified,4740.94,0.05
+Greece,4425.52,0.05
+Iceland,4310.0,0.04
+Canada,3115.44,0.03
+Malta,1980.47,0.02
+United Arab Emirates,1864.78,0.02
+USA,1730.92,0.02
+Lebanon,1693.88,0.02
+Lithuania,1661.06,0.02
+European Community,1150.75,0.01
+Brazil,1143.6,0.01
+RSA,1002.31,0.01
+Czech Republic,671.72,0.01
+Bahrain,548.4,0.01
+Saudi Arabia,131.17,0.0

@@ -1,99 +1,109 @@
-# Real-World Data Cleaning & EDA — Online Retail
+# Online Retail: Data Cleaning, EDA & RFM Segmentation
 
-**Week 1 bootcamp project #2.** While most practice datasets are clean, this
-one is genuinely messy: the UCI *Online Retail* dataset is a real UK online
-gift retailer's 2010–2011 transaction log with real duplicates, missing IDs,
-cancellations, and corrupted prices. The point of this repo is **documented
-cleaning decisions**, not just charts.
+**Business question:** a UK online gift wholesaler wants to know where its revenue
+really comes from, which customers to protect or win back, and when to plan for peak
+demand. The raw transaction log is messy, so answering correctly starts with
+**documented cleaning decisions**.
 
-## What was wrong with the data (audit)
+All money is in **GBP (£)**. All revenue figures are **net of cancellations**.
 
-| Problem | Rows | What we did |
+## Recommendations
+
+| # | Action | Evidence |
 |---|---|---|
-| Exact duplicate rows | 5,268 | Dropped |
-| Cancellation invoices (prefix "C") | 9,251 | Kept, flagged `is_cancellation` |
-| Negative quantity without C invoice | 1,336 | Kept, flagged `is_adjustment` (damaged stock etc.) |
-| Zero/negative unit price | 2,512 | Dropped (fee/adjustment lines, not sales) |
-| Non-product codes (POST, DOT, M, ...) | 2,957 | Dropped (postage, manuals, bank charges) |
-| Missing Description | 1,454 raw | Filled `"Unknown"` (mostly gone after price filter) |
-| **Missing CustomerID** | **131,516 (25%)** | **Kept as NA** — dropping them would erase a quarter of revenue; customer analyses use the non-null subset, revenue analyses use all rows |
+| 1 | **Protect the top accounts.** Give the 941 "Champions" dedicated account management. | 22% of customers bring **67%** of net revenue (£5.53M). |
+| 2 | **Run a win-back campaign** for 657 lapsed regulars. | They placed 3+ orders but haven't ordered in a median of **131 days**. Winning back 1 in 10 at their median spend (£710) ≈ **£47K**, a conservative floor. |
+| 3 | **Plan stock and cash for Sep–Nov.** | Sep–Nov brought **38%** of the year's net revenue; November was **2.6×** the Feb–Apr average. |
+| 4 | **Add an order-quantity check** at entry. | Two single orders (74,215 and 80,995 units, £246K) were keyed in and cancelled within 20 minutes. They also distort any gross-revenue ranking. |
+| 5 | **Capture customer IDs on every order.** | 25% of lines (**15% of sales**) have no customer ID, so that revenue can't be used for CRM or segmentation. |
 
-Every step is logged to `outputs/cleaning_report.json` with row counts and the
-reasoning — the same discipline as a production pipeline.
+## Key numbers (cleaned data, 1 Dec 2010 – 9 Dec 2011)
 
-## Key findings (cleaned data)
-
-- Net revenue **$9.77M** across **23,195 orders** ($421/order), 3,914 products, 4,362 identified customers, 38 countries
-- UK customers drive **85%** of revenue; Netherlands, EIRE, Germany and France follow
-- Cancellations cost **$476K**, about 4.6% of gross revenue
-- Revenue grows through 2011 with strong seasonality into November
-- Top product: *REGENCY CAKESTAND 3 TIER*
-
-## RFM customer segmentation
-
-Using the identified-customer subset (4,334 customers after cleaning), customers were
-scored on Recency, Frequency and Monetary value (quintiles, snapshot 2011-12-10) and
-mapped to standard RFM segments (`src/rfm.py`, outputs in `rfm_segments.csv` / `5_rfm_segments.png`):
-
-| Segment | Customers | Revenue | Share of revenue |
-|---|---|---|---|
-| Champions | 956 (22%) | $5.71M | **65.3%** |
-| Loyal customers | 768 (18%) | $1.36M | 15.5% |
-| At risk (was loyal) | 637 (15%) | $0.78M | 9.0% |
-| Promising / new | 964 (22%) | $0.45M | 5.1% |
-| Hibernating | 669 (15%) | $0.31M | 3.6% |
-| Potential loyalists | 340 (8%) | $0.13M | 1.5% |
-
-Business takeaway: a fifth of the customers generate two-thirds of revenue, and
-another $0.78M sits with recently lapsed loyal buyers, the retailer's most
-recoverable revenue pool.
+- Net revenue **£9.77M** = £10.25M gross sales − £0.48M cancellations (4.6%)
+- **19,773** sales invoices (plus 3,422 cancellation invoices), average order **£518**
+- 3,914 products, 4,362 identified customers, 38 countries
+- UK = **85%** of net revenue; Netherlands, EIRE, Germany and France are 1.9–2.9% each
+- Top product: *Regency Cakestand 3 Tier* (£164K net)
 
 ## Charts
 
-**What cleaning accomplished** — raw (dashed, with duplicates & fee lines) vs cleaned monthly net revenue:
+**Seasonality.** Q4 is the business: plan inventory from August.
+![](1_monthly_revenue.png)
 
-![](4_raw_vs_clean.png)
-
-**RFM: a small champion core drives revenue** — bars = revenue, line = share of customers:
-
+**Customer concentration (RFM).** A fifth of customers bring two-thirds of revenue.
 ![](5_rfm_segments.png)
 
-## Repo layout
+**Top products by net revenue.** Two items that a gross ranking would place in the top 10 were huge orders cancelled the same day.
+![](2_top_products.png)
 
-```
-├── README.md
-├── src/
-│   ├── clean.py        # audit -> 7 documented cleaning steps -> clean CSV
-│   ├── analyze.py     # EDA charts on the cleaned data
-│   └── rfm.py         # RFM segmentation: scores, segments, chart, KPIs
-├── data/
-│   └── Online Retail.xlsx   # UCI source (not in git; see .gitignore)
-└── outputs/
-    ├── cleaning_report.json # step-by-step provenance
-    ├── 1_monthly_revenue.png      # trend + cancellation value
-    ├── 2_top_products.png        # top 10 products
-    ├── 3_revenue_by_country.png  # log-scale country revenue
-    └── 4_raw_vs_clean.png        # effect of cleaning on the trend
-```
+**Market concentration.** All 37 export markets together are 15% of revenue.
+![](3_revenue_by_country.png)
+
+**What cleaning did.** Only 2% of rows were deleted; the larger problems were kept and handled.
+![](4_cleaning_audit.png)
+
+## Data audit: what was wrong and what we did
+
+| Problem | Rows | Decision |
+|---|---|---|
+| Exact duplicate lines | 5,268 | Dropped |
+| Cancellation lines (invoice starts with "C") | 9,251 | **Kept**, flagged. They are real lost revenue and are netted out of every figure |
+| Negative quantity on a normal invoice | 1,336 | All are zero-price stock write-offs, removed with the next rule |
+| Zero/negative unit price | 2,512 | Dropped. These are write-offs and adjustments (98% have no customer), not sales |
+| Non-product codes (POST, DOT, M, C2, bank/Amazon fees …) | 2,957 | Dropped. These are postage, manual adjustments and fees, not products |
+| Missing Description | 1,454 raw | All were zero-price lines, so none remain |
+| **Missing CustomerID** | **131,516** (24.8% of lines, 14.7% of sales) | **Kept as NA**. Revenue analyses use all rows; RFM uses identified customers only |
+
+Every step, with counts and reasons, is logged in `cleaning_report.json`.
+
+## RFM method
+
+- **Monetary = net spend** (sales minus that customer's cancellations). Using gross spend would credit customers for orders they cancelled: one customer would rank as "Loyal" on £168K of orders that netted £2.90.
+- 10 customers whose net spend is ≤ £0 are excluded from scoring; 4,324 are scored.
+- R, F and M are scored 1–5 by quintile (ties broken by rank). Snapshot date: 2011-12-10.
+- Segment rules (exhaustive, non-overlapping): Champions (R≥4, F≥4, M≥4) · Loyal (R≥3, F≥3) · At risk (R≤2, F≥3) · New/recent one-offs (R≥4, F≤2) · Needs attention (R=3, F≤2) · Hibernating (R≤2, F≤2).
+
+| Segment | Customers | Net revenue | Revenue share | Median days since last order |
+|---|---|---|---|---|
+| Champions | 941 (22%) | £5.53M | **66.8%** | 10 |
+| Loyal | 996 (23%) | £1.25M | 15.1% | 33 |
+| At risk (lapsed regulars) | 657 (15%) | £0.77M | 9.4% | 131 |
+| Hibernating | 1,073 (25%) | £0.43M | 5.2% | 218 |
+| Needs attention | 346 (8%) | £0.16M | 1.9% | 52 |
+| New / recent one-offs | 311 (7%) | £0.13M | 1.6% | 18 |
+
+## Limitations
+
+- **Revenue, not profit.** The data has no cost or margin data, so "top" means top by revenue.
+- **One year of data.** The Sep–Nov peak is a single season, not a proven pattern.
+- December 2011 stops on the 9th and is excluded from the monthly trend.
+- RFM quintiles are relative to this customer base, and the win-back figure is a scenario, not a forecast.
+
+## Data source and verification
+
+UCI Machine Learning Repository, *Online Retail* (Chen, 2015), doi:[10.24432/C5BW33](https://doi.org/10.24432/C5BW33).
+It covers all transactions from 01/12/2010 to 09/12/2011 for a UK-based online retailer, and UCI notes that many of its customers are wholesalers.
+
+Verification: the data used has **541,909 rows** and runs from 1 Dec 2010 to 9 Dec 2011, matching UCI's metadata. It has 406,829 non-null CustomerIDs and 540,455 non-null Descriptions, matching the standard `df.info()` of the UCI `.xlsx`.
+Note that UCI's page lists "Has Missing Values: No", which is wrong: 135,080 raw rows have no CustomerID.
 
 ## Reproduce
 
 ```bash
-# download Online Retail.xlsx from UCI (https://archive.ics.uci.edu/dataset/352/online+retail)
-# into data/, then:
-pip install -r ../superstore-sales-analysis/requirements.txt
-python src/clean.py && python src/analyze.py && python src/rfm.py
+pip install -r requirements.txt
+mkdir -p data
+# Option A: UCI original -> data/"Online Retail.xlsx"
+#   https://archive.ics.uci.edu/dataset/352/online+retail
+# Option B: identical 541,909 rows as CSV -> data/online-retail.csv
+curl -L -o data/online-retail.csv \
+  https://raw.githubusercontent.com/databricks/Spark-The-Definitive-Guide/master/data/retail-data/all/online-retail-dataset.csv
+python clean.py && python analyze.py && python rfm.py
 ```
 
-## Why this matters
+## Files
 
-A quarter of all rows are unidentifiable customers. The lazy fix is
-`dropna()` — and it silently deletes 25% of the business's revenue. The real
-fix is deciding *per analysis*: revenue questions use all rows, customer
-questions use identified ones. That decision, made explicitly and logged, is
-what separates data cleaning from data deleting.
-
-## Data source
-
-UCI Machine Learning Repository — *Online Retail* dataset (Daqing Chen et al.,
-2012). Intended for education and portfolio use.
+| File | What it is |
+|---|---|
+| `clean.py` | Audit → documented cleaning steps → `data/retail_clean.csv` + `cleaning_report.json` |
+| `analyze.py` | Charts 1–4 + `eda_kpi.json`, `monthly.csv`, `top_products.csv`, `by_country.csv` |
+| `rfm.py` | RFM scores and segments → chart 5, `rfm_segments.csv`, `rfm_customers.csv`, `rfm_kpi.json` |
